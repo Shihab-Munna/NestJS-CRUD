@@ -11,7 +11,6 @@ import {
 
 import { Scope } from 'typeorm-scope';
 
-@Scope<SubTask>([(qb, alias) => qb.andWhere(`${alias}.deletedAt IS NULL`)])
 @Entity({ name: 'Subtask' })
 export class SubTask extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')

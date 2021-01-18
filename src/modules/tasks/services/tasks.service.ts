@@ -60,39 +60,36 @@ export class TasksService {
   }
 
   async getTaskById(id: string, user: User): Promise<Task> {
-    try {
-      const taskFound = await this.taskRepository.findOne({
-        where: { id, user: user.id },
-        relations: ['subTasks', 'user'],
-      });
+    const mainTable = 'task';
+    const relations = ["user", "subTasks"];
 
-      // const taskUsingId = await getConnection()
-      //   .createQueryBuilder()
-      //   .select('task')
-      //   .from(Task, 'task')
-      //   .where('task.id = :id', { id: id })
-      //   .andWhere('task.status = :status', { status: 'TODO' })
-      //   .getOne();
+    const qb = this.taskRepository
+        .manager.getRepository(Task)
+        .createQueryBuilder(mainTable);
 
-      //  const TastGet = await getConnection()
-      //   .createQueryBuilder()
-      //   .select('task')
-      //   .from(Task, 'task')
-      //   .where('task.status = :status', { status: 'TODO' })
-      //   .andWhere(
-      //     new Brackets((qb) => {
-      //       qb.andWhere('task.id = :id', {
-      //         id: id,
-      //       }).andWhere('task.user_Id = :userId', { userId: user.id });
-      //     }),
-      //   )
-      //   .getOne();
-      // //
-      if (!taskFound) throw new NotFoundException('Task Not Found!');
-      return taskFound;
-    } catch (error) {
-      return error;
+    for(let relation of relations){
+      qb.leftJoinAndSelect(`${mainTable}.${relation}`, relation, `"${relation}"."deletedAt" is null`)
     }
+
+    // qb.where(`${mainTable}.id=:taskid`, { taskid: id })
+    qb.where({id: id});
+    // qb.orderBy()
+    // qb.limit()
+    return qb.getOne();
+
+/*
+
+
+    return await this.taskRepository
+      .manager.getRepository(Task)
+      .createQueryBuilder('task')
+      .innerJoinAndSelect('task.user', 'user')
+      .leftJoinAndSelect('task.subTasks', 'subTasks', "subTasks.deletedAt is null")
+      .where('task.id=:taskid', { taskid: id })
+      .getOne();
+*/
+
+
   }
 
   async createTask(data: any, @GetUser() user: User): Promise<Task> {
