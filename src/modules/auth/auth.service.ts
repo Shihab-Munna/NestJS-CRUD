@@ -27,14 +27,16 @@ export class AuthService {
 
   bcryptHelper = new BcryptHelper();
 
-  async signUp(authCredential: AuthCredentialDto): Promise<void> {
+  async signUp(authCredential: AuthCredentialDto): Promise<User> {
     const { username, password } = authCredential;
     const user = new User();
     user.username = username;
     user.password = await this.bcryptHelper.hashString(password);
 
     try {
-      await this.userRepository.save(user);
+      const userCreated = await this.userRepository.save(user);
+      if (userCreated) delete userCreated.password;
+      return userCreated;
     } catch (error) {
       if (error.code === '23505')
         throw new ConflictException('User Alredy exist');

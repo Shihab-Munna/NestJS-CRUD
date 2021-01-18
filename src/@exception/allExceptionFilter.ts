@@ -33,6 +33,7 @@ export class AllExceptionFilter implements ExceptionFilter {
 
     response.status(status).json({
       statusCode: status,
+      error: exception.message,
       timestamp: new Date().toISOString(),
       path: request.url,
       stack: stack,

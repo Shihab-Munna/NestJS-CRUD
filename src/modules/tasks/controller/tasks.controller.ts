@@ -23,6 +23,7 @@ import { Task } from '../entities/task.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { updateTaskDto } from '../dto/updateTaskDTO';
 import { createTaskDto } from '../dto/create-task.dto';
+import { database } from 'faker';
 
 @Controller('tasks')
 @UseGuards(AuthGuard())
@@ -30,7 +31,7 @@ export class TasksController {
   constructor(private tasksService: TasksService) {}
   @Get()
   getTask(
-    @Req() req,
+    @Req() req: Request,
     @Query(ValidationPipe) filterDto: getTaskfilterDto,
     @GetUser() user: User,
   ): Promise<Task[]> {
@@ -38,16 +39,10 @@ export class TasksController {
     // this.logger.error('Error Happend');
     return this.tasksService.getTask(filterDto, user);
   }
+
   @Get('/search')
   async searchWithMeili(@Body() serachData: any) {
     return await this.tasksService.searchWithMeili(serachData.searchTerm);
-  }
-
-  @Get('/test')
-  testRoute(@Req() req: any): any {
-    console.log('Call From Test Controller!!');
-    console.log('Request: ', req);
-    return { data: 'Test Reached' };
   }
 
   @Get('/all')
@@ -66,11 +61,13 @@ export class TasksController {
     @Body() createTaskDto: any,
     @GetUser() user: User,
   ): Promise<Task> {
-    return await this.tasksService.createTask(createTaskDto, user);
+    if (user && user.id) createTaskDto.user = user.id;
+    // return await this.tasksService.createTask(createTaskDto, user);
+    return await this.tasksService.createTaskWithSubTask(createTaskDto, user);
   }
 
   @Post('/meilesearch')
-  //@UsePipes(ValidationPipe)
+  @UsePipes(ValidationPipe)
   async createTaskWithMeilisearch(
     @Body() data: createTaskDto,
     @GetUser() user: User,

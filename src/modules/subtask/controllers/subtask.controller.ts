@@ -24,6 +24,7 @@ export class SubtaskController {
   @Post('/create')
   @UsePipes(ValidationPipe)
   async createTask(@Body() data: any): Promise<any> {
+    console.log(data);
     return this.subtaskService.addsubTask(data);
   }
 }

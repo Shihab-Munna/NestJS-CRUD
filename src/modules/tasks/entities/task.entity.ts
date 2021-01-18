@@ -15,6 +15,9 @@ import {
 } from 'typeorm';
 import slugify from 'slugify';
 
+import { Scope } from 'typeorm-scope';
+
+@Scope<Task>([(qb, alias) => qb.andWhere(`${alias}.deletedAt IS NULL`)])
 @Entity({ name: 'task' })
 export class Task extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
@@ -41,8 +44,10 @@ export class Task extends BaseEntity {
   @RelationId((task: Task) => task.user)
   userId: string;
 
-  @OneToMany((type) => SubTask, (subTask) => subTask.task)
-  subTasks: SubTask[];
+  @OneToMany((type) => SubTask, (subTask) => subTask.task, {
+    nullable: true,
+  })
+  subTasks!: SubTask[];
 
   // @BeforeInsert()
   // slugifiyTitles() {

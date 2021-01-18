@@ -61,9 +61,6 @@ export class TasksService {
 
   async getTaskById(id: string, user: User): Promise<Task> {
     try {
-      // console.log('get task by id');
-      // console.log(user);
-
       const taskFound = await this.taskRepository.findOne({
         where: { id, user: user.id },
         relations: ['subTasks', 'user'],
@@ -77,22 +74,22 @@ export class TasksService {
       //   .andWhere('task.status = :status', { status: 'TODO' })
       //   .getOne();
 
-      const TastGet = await getConnection()
-        .createQueryBuilder()
-        .select('task')
-        .from(Task, 'task')
-        .where('task.status = :status', { status: 'TODO' })
-        .andWhere(
-          new Brackets((qb) => {
-            qb.andWhere('task.id = :id', {
-              id: id,
-            }).andWhere('task.user_Id = :userId', { userId: user.id });
-          }),
-        )
-        .getOne();
-
+      //  const TastGet = await getConnection()
+      //   .createQueryBuilder()
+      //   .select('task')
+      //   .from(Task, 'task')
+      //   .where('task.status = :status', { status: 'TODO' })
+      //   .andWhere(
+      //     new Brackets((qb) => {
+      //       qb.andWhere('task.id = :id', {
+      //         id: id,
+      //       }).andWhere('task.user_Id = :userId', { userId: user.id });
+      //     }),
+      //   )
+      //   .getOne();
+      // //
       if (!taskFound) throw new NotFoundException('Task Not Found!');
-      return TastGet;
+      return taskFound;
     } catch (error) {
       return error;
     }
@@ -118,19 +115,22 @@ export class TasksService {
         const mapedData = dtoToModelMapper(Task, data);
         console.log('Maped Data: ', mapedData);
 
-        const newTask = new Task();
-        newTask.title = data.title;
-        newTask.description = data.description;
-        newTask.user = user;
-        const task = await queryRunner.manager.save(newTask);
+        // const newTask = new Task();
+        // newTask.title = data.title;
+        // newTask.description = data.description;
+        // newTask.user = user;
+        const task = await queryRunner.manager.save(mapedData);
         console.log('Task Created', task);
         if (task.id) {
-          const newSubTask = new SubTask();
-          newSubTask.subTask = 'New Sub';
-          newSubTask.status = 'todo';
-          newSubTask.task = task;
-
-          const newSubTaskCreated = await queryRunner.manager.save(newSubTask);
+          const newSubTask = {
+            subTask: data.subTask,
+            status: data.status,
+            task: task,
+          };
+          const newSubTaskCreated = await queryRunner.manager.save(
+            SubTask,
+            newSubTask,
+          );
           //console.log('Sub Task Created: ', newSubTaskCreated);
         }
 
@@ -154,17 +154,31 @@ export class TasksService {
   }
 
   async deleteTask(id: string, user: User): Promise<void> {
+    const queryRunner = this.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
     try {
       console.log('Users: ', user);
-      const isdeleted = await this.taskRepository.delete({
+      // const isdeleted = await this.taskRepository.delete({
+      //   id,
+      //   user: user,
+      // });
+      const deleteSubTask = await queryRunner.manager.delete(SubTask, {
+        task: id,
+      });
+
+      const isdeleted = await queryRunner.manager.delete(Task, {
         id,
         user: user,
       });
-
+      await queryRunner.commitTransaction();
       if (isdeleted.affected === 0)
         throw new NotFoundException(`No Such Task To delete`);
     } catch (error) {
+      await queryRunner.rollbackTransaction();
       return error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -224,9 +238,9 @@ export class TasksService {
     await queryRunner.startTransaction();
     try {
       data.user = user;
-      const mapedData = dtoToModelMapper(Task, data);
-      console.log('Maped Data: ', mapedData);
-      const task = await queryRunner.manager.save(mapedData);
+      // const mapedData = dtoToModelMapper(Task, data);
+      // console.log('Maped Data: ', mapedData);
+      const task = await queryRunner.manager.save(Task, data);
       const taskDoccumnet = TaskDocs(task);
       console.log('task', taskDoccumnet);
       await queryRunner.commitTransaction();

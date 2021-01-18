@@ -19,7 +19,7 @@ export class AuthController {
   @Post('/signup')
   singUp(
     @Body(ValidationPipe) authCredentialDto: AuthCredentialDto,
-  ): Promise<void> {
+  ): Promise<User> {
     return this.authSevice.signUp(authCredentialDto);
   }
 
