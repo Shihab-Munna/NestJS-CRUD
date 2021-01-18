@@ -17,7 +17,6 @@ import slugify from 'slugify';
 
 import { Scope } from 'typeorm-scope';
 
-@Scope<Task>([(qb, alias) => qb.andWhere(`${alias}.deletedAt IS NULL`)])
 @Entity({ name: 'task' })
 export class Task extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')

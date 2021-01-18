@@ -2,6 +2,7 @@ import { Task } from 'src/modules/tasks/entities/task.entity';
 import {
   BaseEntity,
   Column,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -22,4 +23,7 @@ export class User extends BaseEntity {
 
   @OneToMany((type) => Task, (task) => task.user)
   tasks: Task[];
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt?: Date;
 }
